@@ -1,0 +1,137 @@
+.task-card {
+  display: flex;
+  flex-direction: column;
+  padding: 32px 24px;
+  gap: 20px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+}
+
+.task-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 100%);
+  pointer-events: none;
+}
+
+.task-card:hover:not(.locked) {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-primary-light);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.task-card.done {
+  background: var(--color-primary-dark);
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-glow);
+  transform: translateY(0); /* Remove hover lift if done, or keep it. Let's keep it static if done. */
+}
+
+.task-card.done:hover {
+  transform: translateY(-4px);
+}
+
+.task-card.locked {
+  opacity: 0.6;
+  cursor: not-allowed;
+  filter: grayscale(100%);
+}
+
+.task-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.task-icon-wrapper {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.task-card.done .task-icon-wrapper {
+  background-color: rgba(209, 208, 103, 0.1);
+  color: var(--color-accent);
+}
+
+.task-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.task-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--color-primary-dark);
+  transition: color 0.3s ease;
+}
+
+.task-desc {
+  font-size: 1rem;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+  transition: color 0.3s ease;
+}
+
+.task-card.done .task-title,
+.task-card.done .task-desc {
+  color: var(--color-accent);
+}
+
+.task-card.done .task-desc {
+  opacity: 0.8;
+}
+
+.task-footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.task-btn {
+  background-color: var(--color-primary-dark);
+  color: white;
+  padding: 10px 24px;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.task-card:hover:not(.locked) .task-btn {
+  background-color: var(--color-accent);
+  color: var(--color-primary-dark);
+  transform: scale(1.05);
+}
+
+.task-btn:disabled {
+  background-color: #cbd5e1;
+  color: #64748b;
+}
+
+.task-done-icon {
+  color: var(--color-accent);
+  animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+  0% { transform: scale(0); }
+  100% { transform: scale(1); }
+}
