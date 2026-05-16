@@ -56,17 +56,33 @@ export const fetchAlienReply = async (history: {role: 'user'|'alien', content: s
       })
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
-      throw new Error(`HTTP Error: ${response.status}`);
+      throw new Error(data.error || `HTTP Error: ${response.status}`);
     }
 
-    const data = await response.json();
-    return data.choices[0].message.content;
-  } catch (error) {
-    console.error('API Error (Fallback to Mock):', error);
-    console.warn('⚠️ 未连接到后端或配置错误，自动降级为 Mock 数据。提示：如果你在本地开发，请使用 `vercel dev` 命令启动。');
-    const lastMessage = history[history.length - 1]?.content || '';
-    return mockAlienReply(lastMessage);
+    if (data.error) {
+      throw new Error(data.error.message || JSON.stringify(data.error));
+    }
+
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      // 可能是国内大模型特有的报错格式，比如 { code: 123, msg: "..." }
+      if (data.msg || data.message) {
+        throw new Error(`API 返回错误: ${data.msg || data.message}`);
+      }
+      throw new Error(`API 返回了无法解析的数据格式: ${JSON.stringify(data).substring(0, 50)}`);
+    }
+
+    const content = data.choices[0].message.content;
+    if (content === null || content === undefined || content === '') {
+      throw new Error('API 返回了空的回复');
+    }
+
+    return content;
+  } catch (error: any) {
+    console.error('API Error:', error);
+    return `[系统提示] 通讯链路异常: ${error.message}。请检查 Render 后台的环境变量配置是否正确。`;
   }
 };
 
