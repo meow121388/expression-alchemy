@@ -51,8 +51,7 @@ export const fetchAlienReply = async (history: {role: 'user'|'alien', content: s
       },
       body: JSON.stringify({
         messages,
-        temperature: 0.7,
-        max_tokens: 100
+        temperature: 0.7
       })
     });
 
@@ -71,18 +70,18 @@ export const fetchAlienReply = async (history: {role: 'user'|'alien', content: s
       if (data.msg || data.message) {
         throw new Error(`API 返回错误: ${data.msg || data.message}`);
       }
-      throw new Error(`API 返回了无法解析的数据格式: ${JSON.stringify(data).substring(0, 50)}`);
+      throw new Error(`API 返回了无法解析的数据: ${JSON.stringify(data).substring(0, 50)}`);
     }
 
     const content = data.choices[0].message.content;
     if (content === null || content === undefined || content === '') {
-      throw new Error('API 返回了空的回复');
+      throw new Error(`空回复。原始数据: ${JSON.stringify(data).substring(0, 100)}`);
     }
 
     return content;
   } catch (error: any) {
     console.error('API Error:', error);
-    return `[系统提示] 通讯链路异常: ${error.message}。请检查 Render 后台的环境变量配置是否正确。`;
+    return `[系统提示] 通讯链路异常: ${error.message}。`;
   }
 };
 
