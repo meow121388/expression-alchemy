@@ -69,7 +69,7 @@ const distPath = join(__dirname, 'dist');
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
   // 任何未匹配的路由都返回 index.html (支持 React Router 前端路由)
-  app.get('*', (req, res) => {
+  app.get('/*', (req, res) => {
     res.sendFile(join(distPath, 'index.html'));
   });
 } else {
