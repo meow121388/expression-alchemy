@@ -62,48 +62,57 @@ export const mockAiAnalyze = (input: string, originalLength: number): Promise<Sc
   });
 };
 
-export const mockAiAnalyzeScenario = (s1: string, s2: string, s3: string): Promise<ScoreReport> => {
+export const mockAiAnalyzeScenario = (s1: string, s2: string, s3: string, totalUsedChars: number): Promise<ScoreReport> => {
   return new Promise((resolve) => {
     setTimeout(() => {
-      let score = 92;
+      let score = 95;
       const hitWords: string[] = [];
       const combinedInput = s1 + s2 + s3;
 
       REDUNDANT_WORDS.forEach(word => {
         if (combinedInput.includes(word)) {
           hitWords.push(word);
-          score -= 8;
+          score -= 10;
         }
       });
 
-      // Basic length check (simulated AI evaluating info density)
-      if (s1.length < 4 || s2.length < 4 || s3.length < 4) {
-        score -= 10;
+      // Extreme penalty for verbosity
+      if (totalUsedChars > 50) {
+        score -= 40; // Auto fail
+      } else if (totalUsedChars > 30) {
+        score -= (totalUsedChars - 30) * 2;
+      } else if (totalUsedChars < 20 && totalUsedChars > 5) {
+        score += 5; // Bonus for extreme conciseness
       }
 
-      score = Math.max(score, 40);
+      // Basic length check (too short = probably didn't explain well)
+      if (s1.length < 2 && s2.length < 2 && s3.length < 2) {
+        score -= 50;
+      }
+
+      score = Math.max(Math.min(score, 100), 10);
 
       let feedbackTitle = "";
       let feedbackDetail = "";
 
       if (score >= 90) {
-        feedbackTitle = "职场沟通达人！";
-        feedbackDetail = "结构极其清晰！先抛结论，紧接强有力的原因，最后抛出明确诉求，无懈可击。";
-      } else if (score >= 75) {
-        feedbackTitle = "结构不错！";
-        feedbackDetail = "你已经掌握了三段式沟通的要领，但词句中还夹杂了一些软化语气的废话，可以更加直接一点。";
+        feedbackTitle = "字字珠玑！";
+        feedbackDetail = `仅用了 ${totalUsedChars} 个字就把这事说明白了！外星人对你的信息密度表示惊叹，决定不摧毁地球。`;
+      } else if (score >= 60) {
+        feedbackTitle = "勉强过关";
+        feedbackDetail = `你用了 ${totalUsedChars} 个字。虽然对方听懂了，但你的描述略显啰嗦。记住，外星人的处理资源很宝贵。`;
       } else {
-        feedbackTitle = "逻辑有点散漫哦~";
-        feedbackDetail = "即使拆成了三句话，也需要保证每句话的信息密度。记得结论先行。";
+        feedbackTitle = "废话连篇！";
+        feedbackDetail = `你竟然用了 ${totalUsedChars} 个字！外星人的处理器因为处理过多废话而过载，通讯强行切断！`;
       }
 
       resolve({
         score,
-        compressionRate: 100, // Not applicable for this mode, but used in UI
+        compressionRate: 100, // Not applicable
         hitWords,
         feedbackTitle,
         feedbackDetail,
-        aiReference: "结论：我需要全额退款。\n原因：产品存在严重质量问题与描述不符。\n诉求：请立刻帮我处理退款手续。"
+        aiReference: "黑色淀粉球，浸泡在含糖奶茶中，需用吸管吸食。"
       });
     }, 1500);
   });

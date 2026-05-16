@@ -9,7 +9,6 @@ import type { ScoreReport } from '../utils/mockAiScorer';
 import './TaskScenario.css';
 import './TaskCompression.css'; 
 
-const TOTAL_CHAR_LIMIT = 50;
 const MAX_TURNS = 3;
 
 interface Message {
@@ -40,9 +39,7 @@ export const TaskScenario = () => {
     .filter(m => m.role === 'user')
     .reduce((acc, m) => acc + m.content.length, 0);
 
-  const charsRemaining = TOTAL_CHAR_LIMIT - totalUsedChars;
-  const isInputExceeding = inputText.trim().length > charsRemaining;
-  const isSendDisabled = inputText.trim().length === 0 || isInputExceeding || turnCount <= 0 || isAlienTyping || isAnalyzing || totalUsedChars >= TOTAL_CHAR_LIMIT;
+  const isSendDisabled = inputText.trim().length === 0 || turnCount <= 0 || isAlienTyping || isAnalyzing;
 
   const handleSend = async () => {
     if (isSendDisabled) return;
@@ -56,10 +53,10 @@ export const TaskScenario = () => {
     const nextTurnCount = turnCount - 1;
     setTurnCount(nextTurnCount);
 
-    if (nextTurnCount === 0 || newTotalUsedChars >= TOTAL_CHAR_LIMIT) {
+    if (nextTurnCount === 0) {
       // End of transmission
       setIsAnalyzing(true);
-      const result = await fetchAlienScore(newMessages);
+      const result = await fetchAlienScore(newMessages, newTotalUsedChars);
       setReport(result);
       setIsAnalyzing(false);
     } else {
@@ -85,11 +82,7 @@ export const TaskScenario = () => {
   return (
     <div className="task-page-container">
       <header className="task-page-header glass-panel">
-        <button className="back-btn" onClick={() => navigate('/')}>
-          <ArrowLeft size={20} />
-          <span>放弃通讯返回</span>
-        </button>
-        <h1 className="task-page-title">第三类接触：三句话协议</h1>
+        <h1 className="task-page-title" style={{ marginLeft: '1rem' }}>第三类接触：三句话协议</h1>
         <div className="task-header-placeholder"></div>
       </header>
 
@@ -119,8 +112,8 @@ export const TaskScenario = () => {
             <h3 className="rules-title"><Skull size={16} /> 【安全通讯守则】</h3>
             <ul className="creepy-rules">
               <li>1. 它没有咀嚼器官，<strong>绝不能使用“嚼”字</strong>，否则可能引发其攻击行为。</li>
-              <li>2. 极简原则：全局字数配额上限为 <strong>{TOTAL_CHAR_LIMIT}</strong> 字，最多可分 3 次传输。</li>
-              <li>3. 一旦字数耗尽或 3 次频次用光，通讯将强制切断并由系统进行最终理解度判定。</li>
+              <li>2. 极简原则：字数无上限，但<strong>你使用的字数越少，描述越准确，最终评分越高！</strong>啰嗦会大幅扣分。</li>
+              <li>3. 你最多只能分 3 次传输信息，3 次耗尽后系统将进行最终理解度判定。</li>
             </ul>
           </div>
         </motion.div>
@@ -132,9 +125,9 @@ export const TaskScenario = () => {
         >
           <div className="chat-header">
             <Terminal size={20} className="terminal-icon" />
-            <span>远端链路 (资源配额制)</span>
-            <span className={`turn-counter ${turnCount === 1 || charsRemaining < 10 ? 'critical' : ''}`}>
-              频次: {turnCount}/{MAX_TURNS} | 余量: {charsRemaining}/{TOTAL_CHAR_LIMIT}
+            <span>远端链路</span>
+            <span className={`turn-counter ${turnCount === 1 ? 'critical' : ''}`}>
+              剩余频次: {turnCount}/{MAX_TURNS} | 已消耗字数: {totalUsedChars}
             </span>
           </div>
 
@@ -161,18 +154,18 @@ export const TaskScenario = () => {
 
           <div className="chat-input-area">
             <div className="input-stats">
-              <span className={`char-counter ${isInputExceeding ? 'error' : ''}`}>
-                本次输入: {inputText.length} / 允许上限: {charsRemaining}
+              <span className="char-counter">
+                本次输入: {inputText.length} 字 (记得字数越少越好)
               </span>
             </div>
             <div className="input-row">
               <textarea
                 className="chat-textarea"
                 rows={2}
-                placeholder={charsRemaining <= 0 ? "字数配额已耗尽" : "描述珍珠奶茶..."}
+                placeholder="描述珍珠奶茶..."
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                disabled={turnCount <= 0 || isAlienTyping || isAnalyzing || totalUsedChars >= TOTAL_CHAR_LIMIT}
+                disabled={turnCount <= 0 || isAlienTyping || isAnalyzing}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();

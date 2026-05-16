@@ -18,14 +18,22 @@ const ALIEN_SYSTEM_PROMPT = `你是一个代号为“泽塔星云硅基生命体
 4. 如果人类提到“嚼”，必须立刻发出强烈的系统警告，因为你没有咀嚼器官。
 请直接扮演角色进行回复，不要包含任何多余的解释。`;
 
-const SCORE_SYSTEM_PROMPT = `你是一个外星语言学评分系统。请根据人类（user）和外星人（assistant）的对话历史，评估人类是否成功地用50个字以内的代价，让外星人理解了“珍珠奶茶”的物理特征和饮用方式。
+const SCORE_SYSTEM_PROMPT = `你是一个外星语言学评分系统。请根据人类（user）和外星人（assistant）的对话历史，评估人类是否成功让外星人理解了“珍珠奶茶”的物理特征和饮用方式。
+
+### 核心评分机制（极简原则）：
+总分 100 分。**字数越少，描述越准确，分数越高！**
+由于你将收到人类使用的总字数，请严格按照以下标准扣分：
+1. **准确性**：如果外星人没有完全理解，扣 20-50 分。
+2. **极简惩罚**：如果人类总字数超过 30 字，每多出 1 个字扣 2 分！如果总字数超过 50 字，直接不及格（低于60分）。
+3. **废话惩罚**：使用了无意义的语气词或修饰语（如：其实、觉得、怎么说呢），扣 10 分。
+
 请返回严格的 JSON 格式数据：
 {
-  "score": 0-100的整数,
-  "hitWords": ["列出人类使用的高频废话或违禁词", "例如: 嚼"],
+  "score": 最终计算出的分数(0-100的整数),
+  "hitWords": ["列出人类使用的高频废话或违禁词"],
   "feedbackTitle": "简短的评语标题",
-  "feedbackDetail": "详细的评价，指出人类描述中的盲点或亮点",
-  "aiReference": "如果你来描述，你会给出的最精准极简答案（30字以内）"
+  "feedbackDetail": "详细的评价，请务必在评价中指出人类的具体消耗字数，并点评其是否啰嗦",
+  "aiReference": "如果你来描述，你会给出的最精准极简答案（务必控制在20字以内）"
 }`;
 
 export const fetchAlienReply = async (history: {role: 'user'|'alien', content: string}[]): Promise<string> => {
@@ -85,15 +93,16 @@ export const fetchAlienReply = async (history: {role: 'user'|'alien', content: s
   }
 };
 
-export const fetchAlienScore = async (history: {role: 'user'|'alien', content: string}[]): Promise<ScoreReport> => {
+export const fetchAlienScore = async (history: {role: 'user'|'alien', content: string}[], totalUsedChars: number): Promise<ScoreReport> => {
   if (USE_MOCK) {
     console.warn('⚠️ 强制使用本地 Mock 数据');
     const userInputs = history.filter(m => m.role === 'user').map(m => m.content);
-    return mockAiAnalyzeScenario(userInputs[0] || '', userInputs[1] || '', userInputs[2] || '');
+    return mockAiAnalyzeScenario(userInputs[0] || '', userInputs[1] || '', userInputs[2] || '', totalUsedChars);
   }
 
   const messages: Message[] = [
     { role: 'system', content: SCORE_SYSTEM_PROMPT },
+    { role: 'system', content: `[系统通知] 人类本次通讯共消耗了 ${totalUsedChars} 个字符。请严格依据该数据进行极简惩罚计算。` },
     ...history.map(msg => {
       const role: 'assistant' | 'user' = msg.role === 'alien' ? 'assistant' : 'user';
       return { role, content: msg.content };
@@ -131,6 +140,6 @@ export const fetchAlienScore = async (history: {role: 'user'|'alien', content: s
   } catch (error) {
     console.error('API Error (Fallback to Mock):', error);
     const userInputs = history.filter(m => m.role === 'user').map(m => m.content);
-    return await mockAiAnalyzeScenario(userInputs[0] || '', userInputs[1] || '', userInputs[2] || '');
+    return await mockAiAnalyzeScenario(userInputs[0] || '', userInputs[1] || '', userInputs[2] || '', totalUsedChars);
   }
 };
